@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BookNook - Library Event Hub & Community</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', sans-serif; margin:0; padding:0; }
+  .view { display: none; min-height: 100vh; padding:2rem 1rem; }
+  .star { font-size:1.5rem; cursor:pointer; color:#d1d5db; transition: color 0.2s; }
+  .star.selected { color:#facc15; }
+  .landing-btn { cursor:pointer; transition:all 0.3s ease; }
+  .landing-btn:hover { transform: scale(1.05); }
+  body, html { height:100%; background:linear-gradient(270deg,#34d399,#3b82f6,#facc15,#06b6d4); background-size:800% 800%; animation: gradientShift 20s ease infinite; }
+  @keyframes gradientShift { 0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;} }
+  .animated-circle { position:absolute; border-radius:50%; opacity:0.3; animation: floatCircle 15s ease-in-out infinite; }
+  .animated-circle:nth-child(2){ width:400px;height:400px;top:50%;left:-200px;animation-duration:20s;opacity:0.2; }
+  .animated-circle:nth-child(3){ width:200px;height:200px;top:30%;left:60%;animation-duration:18s;opacity:0.2; }
+  @keyframes floatCircle { 0%,100%{transform:translate(0,0) rotate(0deg);}50%{transform:translate(50px,-30px) rotate(180deg);} }
+  @keyframes fadeIn { 0%{opacity:0;transform:translateY(20px);}100%{opacity:1;transform:translateY(0);} }
+  @keyframes fadeOut { 0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(20px);} }
+  .animate-fadeIn { animation: fadeIn 1s forwards; }
+  .animate-delay-200 { animation-delay:0.2s; }
+  .animate-delay-400 { animation-delay:0.4s; }
+  .card, .form-card { background-color: rgba(14,165,233,0.15); }
+  footer { position: relative; z-index: 10; }
+  .muted { color: rgba(2,6,23,0.5); }
+</style>
+</head>
+<body class="relative overflow-x-hidden">
+
+<!-- Floating circles -->
+<div class="animated-circle bg-cyan-300 w-72 h-72 top-[-100px] left-[-100px]"></div>
+<div class="animated-circle bg-pink-300"></div>
+<div class="animated-circle bg-yellow-300"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed left-0 top-0 z-40 h-full w-64 transform -translate-x-full bg-cyan-500/10 shadow-lg transition-transform duration-300 ease-in-out">
+  <div class="p-5 border-b border-cyan-200 flex items-center justify-center">
+    <img src="C:\Users\Ian\Downloads\logo1.png"
+         alt="BookNook Logo" class="h-14 w-auto object-contain">
+  </div>
+  <p class="text-sm text-cyan-800 mt-2 px-5">Menu</p>
+  <nav class="flex flex-col p-4 space-y-2">
+    <button class="nav-btn text-left px-4 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-700" data-view="events-view">📅 Upcoming Events</button>
+    <button class="nav-btn text-left px-4 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-700" data-view="post-view">🏛️ Post an Event</button>
+    <button class="nav-btn text-left px-4 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-700" data-view="reviews-view">📚 Book Reviews</button>
+    <button class="nav-btn text-left px-4 py-2 rounded-lg hover:bg-cyan-50 hover:text-cyan-700" data-view="writers-view">🖋️ Writer’s Corner</button>
+  </nav>
+</aside>
+<div id="overlay" class="fixed inset-0 z-30 bg-black bg-opacity-40 hidden"></div>
+
+<!-- Header -->
+<header class="bg-cyan-600/40 sticky top-0 z-20">
+  <div class="relative flex items-center justify-center py-4 md:py-5 max-w-5xl mx-auto px-4">
+    <button id="menu-btn" class="absolute left-4 text-white focus:outline-none" aria-label="Open menu">
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+    <img src="C:\Users\Ian\Downloads\logo1.png"
+         alt="BookNook Logo" class="h-24 w-auto object-contain">
+  </div>
+  <div class="bg-cyan-50/50 border-t border-cyan-200 text-center text-sm text-cyan-800 py-2">
+    <strong>Our Mission:</strong> To create an online community of avid readers and to promote lifelong enjoyment of books.
+  </div>
+</header>
+
+<!-- Landing -->
+<section id="landing-view" class="view relative flex flex-col items-center justify-center h-screen overflow-hidden text-center text-white">
+  <h1 class="text-5xl md:text-6xl font-bold mb-6 animate-fadeIn">Welcome to BookNook</h1>
+  <p class="text-lg md:text-xl mb-10 max-w-2xl mx-auto animate-fadeIn animate-delay-200">
+    Attend events at your local library, write book reviews and share your original writing samples.
+  </p>
+  <div class="flex flex-col md:flex-row gap-4 justify-center animate-fadeIn animate-delay-400">
+    <button data-view="events-view" class="landing-btn w-72 md:w-64 bg-cyan-600 text-white rounded-lg px-6 py-4 text-lg font-semibold shadow-lg hover:bg-cyan-700">View events at your local library</button>
+    <button data-view="reviews-view" class="landing-btn w-72 md:w-64 bg-cyan-600 text-white rounded-lg px-6 py-4 text-lg font-semibold shadow-lg hover:bg-cyan-700">Book Reviews-Please share your thoughts with fellow readers</button>
+    <button data-view="writers-view" class="landing-btn w-72 md:w-64 bg-cyan-600 text-white rounded-lg px-6 py-4 text-lg font-semibold shadow-lg hover:bg-cyan-700">Writer's Corner-Share and get feedback on your writing</button>
+    <button data-view="post-view" class="landing-btn w-72 md:w-64 bg-cyan-600 text-white rounded-lg px-6 py-4 text-lg font-semibold shadow-lg hover:bg-cyan-700">Local libraries: Click here to post events</button>
+  </div>
+</section>
+
+<!-- Main -->
+<main class="container mx-auto max-w-5xl p-4 md:p-8 text-cyan-900">
+
+  <!-- Events -->
+  <section id="events-view" class="view space-y-6">
+    <h2 class="text-2xl font-semibold mb-4">Upcoming Events</h2>
+    <div id="event-list" class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"></div>
+  </section>
+
+  <!-- Post -->
+  <section id="post-view" class="view space-y-6">
+    <h2 class="text-2xl font-semibold mb-4">Library Staff Portal</h2>
+    <div id="login-prompt" class="space-y-4 rounded-xl p-6 form-card border border-cyan-200 md:p-8">
+      <p>Enter staff password to post a new event.</p>
+      <input type="password" id="password-input" class="block w-full rounded-lg border-cyan-300 p-3">
+      <button id="login-btn" class="w-full rounded-lg bg-cyan-600 px-6 py-3 text-base font-semibold text-white hover:bg-cyan-700">Login</button>
+    </div>
+    <div id="form-container" class="hidden">
+      <form id="event-form" class="space-y-6 rounded-xl p-6 form-card border border-cyan-200 md:p-8">
+        <input type="text" id="library-name" placeholder="Library Name" required class="block w-full rounded-lg border-cyan-300 p-3">
+        <input type="text" id="event-title" placeholder="Event Title" required class="block w-full rounded-lg border-cyan-300 p-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <input type="date" id="event-date" required class="block w-full rounded-lg border-cyan-300 p-3">
+          <input type="time" id="event-time" required class="block w-full rounded-lg border-cyan-300 p-3">
+        </div>
+        <textarea id="event-description" rows="4" placeholder="Event Description" required class="block w-full rounded-lg border-cyan-300 p-3"></textarea>
+        <input type="email" id="contact-email" placeholder="Contact Email (Optional)" class="block w-full rounded-lg border-cyan-300 p-3">
+        <button type="submit" class="w-full rounded-lg bg-cyan-600 px-6 py-3 text-base font-semibold text-white hover:bg-cyan-700">Submit Event</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Reviews -->
+  <section id="reviews-view" class="view space-y-6">
+    <h2 class="text-2xl font-semibold mb-4">Book Reviews</h2>
+    <div class="mb-4">
+      <label for="genre-select" class="block text-sm font-medium mb-1">Genre:</label>
+      <select id="genre-select" class="rounded-lg border-cyan-300 p-3 focus:ring-cyan-500 focus:border-cyan-500">
+        <option>Action</option><option>Adventure</option><option>Biography</option><option>Children’s</option>
+        <option>Fantasy</option><option>Romance</option><option>Non-Fiction</option><option>Mystery</option>
+        <option>Thriller</option><option>Science Fiction</option><option>Horror</option><option>Historical</option>
+        <option>Poetry</option><option>Self-Help</option><option>Graphic Novel</option><option>Classics</option>
+      </select>
+    </div>
+    <form id="review-form" class="space-y-4 rounded-xl p-6 form-card border border-cyan-200 md:p-8">
+      <input id="book-title" type="text" placeholder="Book Title" required class="w-full rounded-lg border-cyan-300 p-3">
+      <input id="review-author" type="text" placeholder="Author of the book (optional)" class="w-full rounded-lg border-cyan-300 p-3">
+      <textarea id="book-review" rows="3" placeholder="Your Review" required class="w-full rounded-lg border-cyan-300 p-3"></textarea>
+      <div class="flex items-center space-x-2">
+        <span class="text-sm font-medium">Your Rating:</span>
+        <div id="star-rating" class="flex space-x-1">
+          <span class="star" data-value="1">★</span>
+          <span class="star" data-value="2">★</span>
+          <span class="star" data-value="3">★</span>
+          <span class="star" data-value="4">★</span>
+          <span class="star" data-value="5">★</span>
+        </div>
+      </div>
+      <button type="submit" class="w-full rounded-lg bg-cyan-600 px-6 py-3 text-base font-semibold text-white hover:bg-cyan-700">Post Review</button>
+    </form>
+    <div id="reviews-list" class="mt-8 space-y-6"></div>
+  </section>
+
+  <!-- Writers -->
+  <section id="writers-view" class="view space-y-6">
+    <h2 class="text-2xl font-semibold mb-4">Writer’s Corner</h2>
+    <form id="writer-form" class="space-y-4 rounded-xl p-6 form-card border border-cyan-200 md:p-8">
+      <input id="writer-title" type="text" placeholder="Title" required class="w-full rounded-lg border-cyan-300 p-3">
+      <textarea id="writer-text" rows="4" placeholder="Share your story or idea..." required class="w-full rounded-lg border-cyan-300 p-3"></textarea>
+      <button type="submit" class="w-full rounded-lg bg-cyan-600 px-6 py-3 text-base font-semibold text-white hover:bg-cyan-700">Post Writing</button>
+    </form>
+    <div id="writers-list" class="mt-8 space-y-6"></div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="mt-12 border-t border-cyan-200 bg-cyan-600/30">
+  <div class="container mx-auto max-w-5xl px-4 py-6 text-center text-white md:px-8">
+    BookNook Established in 2025
+  </div>
+</footer>
+
+<script type="module">
+// Firebase imports (including delete/get functions)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp,
+  doc,
+  getDoc,
+  setDoc,
+  setLogLevel,
+  deleteDoc,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Small toast helper
+function showToast(message, isError = false) {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-20 right-4 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+    toast.style.animation = 'fadeIn 0.5s forwards';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.5s forwards';
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
+
+// Config (same fallback behavior)
+const firebaseConfig = typeof __firebase_config !== 'undefined'
+    ? JSON.parse(__firebase_config)
+    : {
+        apiKey: "AIzaSyC3c4Hkv908UyCJvnq9lgEgI-xOfS_fdZI",
+        authDomain: "booknook-86a08.firebaseapp.com",
+        projectId: "booknook-86a08",
+        storageBucket: "booknook-86a08.firebasestorage.app",
+        messagingSenderId: "136914366933",
+        appId: "1:136914366933:web:f40d68c4b7d370a8b64d5c"
+    };
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'booknook-local-test';
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+setLogLevel('Debug');
+
+function escapeHtml(str){ if(!str) return ''; return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;"); }
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+
+  const views = document.querySelectorAll('.view');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const menuBtn = document.getElementById('menu-btn');
+  const navButtons = document.querySelectorAll('.nav-btn, .landing-btn');
+
+  let currentUser=null, displayName=null, userId = null;
+  const LIBRARY_PASSWORD="LibCon@2025!";
+  let isLibraryLoggedIn=false;
+  let selectedRating=0;
+
+  // Auth handling and profile creation (stores profile in Firestore)
+  const handleAuthChange = async (user) => {
+      if (user) {
+          currentUser = user;
+          userId = user.uid;
+          const profileDocRef = doc(db, `artifacts/${appId}/users/${userId}/preferences/profile`);
+          try {
+              const docSnap = await getDoc(profileDocRef);
+              if (docSnap.exists()) {
+                  displayName = docSnap.data().displayName;
+              } else {
+                  displayName = `Reader#${userId.slice(-6)}`;
+                  await setDoc(profileDocRef, { displayName: displayName, createdAt: serverTimestamp() });
+              }
+          } catch (e) {
+              console.error("Error fetching/setting user profile:", e);
+              displayName = `Reader#${userId.slice(-6)}`;
+          }
+      } else {
+          currentUser = null;
+          userId = null;
+          displayName = null;
+      }
+  };
+
+  // Wait for initial auth to resolve, then attach ongoing listener
+  await new Promise((resolve, reject) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          await handleAuthChange(user);
+          resolve();
+          unsubscribe();
+      });
+      (async () => {
+          try {
+              if (auth.currentUser) {
+                  await handleAuthChange(auth.currentUser);
+                  resolve();
+                  unsubscribe();
+                  return;
+              }
+              if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                  await signInWithCustomToken(auth, __initial_auth_token);
+              } else {
+                  await signInAnonymously(auth);
+              }
+          } catch (error) {
+              console.error("Authentication Error:", error);
+              reject(error);
+          }
+      })();
+  });
+  onAuthStateChanged(auth, handleAuthChange);
+
+  // Navigation helpers
+  function showView(id){
+    views.forEach(v=>v.style.display='none');
+    const el=document.getElementById(id);
+    if(el) el.style.display='block';
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
+
+    if(id==='post-view'){
+      document.getElementById('login-prompt').style.display = isLibraryLoggedIn?'none':'block';
+      document.getElementById('form-container')?.style.setProperty('display', isLibraryLoggedIn?'block':'none');
+    }
+  }
+  menuBtn.addEventListener('click',()=>{sidebar.classList.toggle('-translate-x-full'); overlay.classList.toggle('hidden');});
+  overlay.addEventListener('click',()=>{sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden');});
+  navButtons.forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+  showView('landing-view');
+
+  // Library login (simple local password check for staff UI)
+  document.getElementById('login-btn').addEventListener('click',()=>{
+    const val=document.getElementById('password-input').value;
+    if(val===LIBRARY_PASSWORD){
+        isLibraryLoggedIn=true;
+        showView('post-view');
+        document.getElementById('password-input').value='';
+        showToast('Staff mode enabled');
+    } else {
+        showToast("Incorrect password.", true);
+    }
+  });
+
+  // EVENTS - create & render (no deletion UI by default, but pattern below shows how to add)
+  const eventsCol = collection(db, `artifacts/${appId}/public/data/events`);
+  const eventList = document.getElementById('event-list');
+  document.getElementById('event-form')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if (!isLibraryLoggedIn) {
+        showToast("You must be logged in as staff to post.", true);
+        return;
+    }
+    await addDoc(eventsCol,{
+      libraryName: escapeHtml(document.getElementById('library-name').value),
+      title: escapeHtml(document.getElementById('event-title').value),
+      date: document.getElementById('event-date').value,
+      time: document.getElementById('event-time').value,
+      description: escapeHtml(document.getElementById('event-description').value),
+      contact: escapeHtml(document.getElementById('contact-email').value),
+      ownerUid: userId || null,
+      timestamp: serverTimestamp()
+    });
+    e.target.reset();
+    showToast('Event posted!');
+  });
+  onSnapshot(query(eventsCol, orderBy('timestamp','desc')), snap=>{
+    eventList.innerHTML='';
+    snap.forEach(docSnap=>{
+      const data=docSnap.data();
+      const div=document.createElement('div');
+      div.className='card rounded-xl p-4 border border-cyan-200';
+      div.innerHTML=`<h3 class="font-semibold">${data.title}</h3><p><strong>Library:</strong> ${data.libraryName}</p>
+        <p><strong>Date:</strong> ${data.date} <strong>Time:</strong> ${data.time}</p>
+        <p>${data.description}</p>${data.contact?`<p><strong>Contact:</strong> ${data.contact}</p>`:''}`;
+      eventList.appendChild(div);
+    });
+  });
+
+  // REVIEWS - create & render with author field and deletion support (owner or staff)
+  const reviewsCol = collection(db, `artifacts/${appId}/public/data/reviews`);
+  const reviewsList = document.getElementById('reviews-list');
+  const stars = document.querySelectorAll('#star-rating .star');
+
+  stars.forEach(s=>{
+    s.addEventListener('click',()=>{ selectedRating=parseInt(s.dataset.value); stars.forEach(st=>st.classList.toggle('selected',parseInt(st.dataset.value)<=selectedRating)); });
+  });
+
+  document.getElementById('review-form').addEventListener('submit',async e=>{
+    e.preventDefault();
+    if (!currentUser || !displayName) {
+        showToast("Please wait... still signing in.", true);
+        return;
+    }
+    if (selectedRating === 0) {
+        showToast("Please select a star rating.", true);
+        return;
+    }
+    await addDoc(reviewsCol,{
+      bookTitle: escapeHtml(document.getElementById('book-title').value),
+      bookAuthor: escapeHtml(document.getElementById('review-author').value || ''),
+      reviewText: escapeHtml(document.getElementById('book-review').value),
+      genre: document.getElementById('genre-select').value,
+      rating: selectedRating,
+      user: displayName,
+      ownerUid: userId || null,
+      timestamp: serverTimestamp()
+    });
+    e.target.reset();
+    selectedRating=0; stars.forEach(st=>st.classList.remove('selected'));
+    showToast("Review posted!");
+  });
+
+  onSnapshot(query(reviewsCol, orderBy('timestamp','desc')), snap=>{
+    reviewsList.innerHTML='';
+    snap.forEach(docSnap=>{
+      const data=docSnap.data();
+      const id = docSnap.id;
+      const div=document.createElement('div');
+      div.className='card rounded-xl p-4 border border-cyan-200';
+      const starsHtml = '★'.repeat(data.rating)+'☆'.repeat(5-data.rating);
+      // include delete button if allowed
+      const canDelete = currentUser && (currentUser.uid === data.ownerUid || isLibraryLoggedIn);
+      div.innerHTML=`<div class="flex justify-between items-start"><div>
+        <h3 class="font-semibold">${data.bookTitle} <span class="text-yellow-400">${starsHtml}</span></h3>
+        <p class="muted"><strong>Author:</strong> ${data.bookAuthor ? data.bookAuthor : '—' } | <strong>Genre:</strong> ${data.genre} | <strong>User:</strong> ${data.user}</p>
+      </div>
+      <div>${canDelete? `<button class="delete-review text-sm text-red-600">Delete</button>` : ''}</div></div>
+        <p class="mt-2">${data.reviewText}</p>`;
+      // wire delete
+      div.querySelector('.delete-review')?.addEventListener('click', async ()=>{
+        if (!confirm('Delete this review?')) return;
+        try {
+          await deleteDoc(doc(db, `artifacts/${appId}/public/data/reviews`, id));
+          showToast('Review deleted');
+        } catch (err) {
+          console.error(err);
+          showToast('Failed to delete review', true);
+        }
+      });
+      reviewsList.appendChild(div);
+    });
+  });
+
+  // WRITERS - create & render, replies, and delete support (owner or staff)
+  const writersCol = collection(db, `artifacts/${appId}/public/data/writers`);
+  const writersList = document.getElementById('writers-list');
+
+  function repliesCollectionRef(writerDocId){
+    return collection(db, `artifacts/${appId}/public/data/writers/${writerDocId}/replies`);
+  }
+
+  let repliesUnsubMap = new Map();
+
+  // create writer post storing ownerUid
+  document.getElementById('writer-form').addEventListener('submit',async e=>{
+    e.preventDefault();
+    if (!currentUser || !displayName) {
+        showToast("Please wait... still signing in.", true);
+        return;
+    }
+    await addDoc(writersCol,{
+      title: escapeHtml(document.getElementById('writer-title').value),
+      text: escapeHtml(document.getElementById('writer-text').value),
+      user: displayName,
+      ownerUid: userId || null,
+      timestamp: serverTimestamp()
+    });
+    e.target.reset();
+    showToast("Writing posted!");
+  });
+
+  // Helper to delete all replies client-side (for small reply sets). Recommend Cloud Function for production cascade deletes.
+  async function deleteAllRepliesForWriter(writerId){
+    try {
+      const snap = await getDocs(repliesCollectionRef(writerId));
+      const promises = snap.docs.map(d => deleteDoc(doc(db, `artifacts/${appId}/public/data/writers/${writerId}/replies`, d.id)));
+      await Promise.all(promises);
+    } catch (err) {
+      console.warn('deleteAllRepliesForWriter error', err);
+    }
+  }
+
+  // Render a writer post with replies and delete button
+  async function renderWriterPost(docSnap){
+    const data = docSnap.data();
+    const id = docSnap.id;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card rounded-xl p-4 border border-cyan-200';
+    wrapper.dataset.writerId = id;
+
+    const canDeleteInitial = currentUser && (currentUser.uid === data.ownerUid || isLibraryLoggedIn);
+
+    wrapper.innerHTML = `
+      <div class="mb-2 flex items-start justify-between gap-4">
+        <div>
+          <h3 class="font-semibold">${data.title}</h3>
+          <p class="text-sm muted"><strong>User:</strong> ${data.user}</p>
+        </div>
+        <div class="flex items-start gap-2">
+          <button class="reply-toggle inline-block text-sm text-cyan-700 bg-cyan-50 px-3 py-1 rounded">Reply</button>
+          <button class="delete-post inline-block text-sm text-red-600 bg-white/10 px-3 py-1 rounded" style="display:${canDeleteInitial ? 'inline-block' : 'none'}">Delete</button>
+        </div>
+      </div>
+      <p class="mt-2">${data.text}</p>
+      <div class="mt-4 space-y-3">
+        <div class="reply-area hidden mt-3">
+          <form class="reply-form space-y-2">
+            <textarea class="reply-text w-full rounded-lg border-cyan-300 p-2" rows="2" placeholder="Write a reply..."></textarea>
+            <div class="flex gap-2">
+              <button type="submit" class="inline-block rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700">Post Reply</button>
+              <button type="button" class="reply-cancel inline-block rounded-lg bg-gray-200 px-4 py-2 text-sm">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div class="replies-list mt-3 space-y-2"></div>
+      </div>
+    `;
+
+    // reply toggle and cancel
+    const toggleBtn = wrapper.querySelector('.reply-toggle');
+    const replyArea = wrapper.querySelector('.reply-area');
+    const cancelBtn = wrapper.querySelector('.reply-cancel');
+    toggleBtn.addEventListener('click', ()=> replyArea.classList.toggle('hidden'));
+    cancelBtn.addEventListener('click', ()=> {
+      replyArea.classList.add('hidden');
+      const ta = wrapper.querySelector('.reply-text');
+      if (ta) ta.value = '';
+    });
+
+    // reply submit
+    const replyForm = wrapper.querySelector('.reply-form');
+    replyForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if (!currentUser || !displayName) {
+          showToast("Please wait... still signing in.", true);
+          return;
+      }
+      const textEl = wrapper.querySelector('.reply-text');
+      const text = escapeHtml(textEl.value);
+      if (!text.trim()) {
+        showToast("Reply cannot be empty.", true);
+        return;
+      }
+      const repliesColRef = repliesCollectionRef(id);
+      await addDoc(repliesColRef, {
+        text,
+        user: displayName,
+        userUid: userId || null,
+        parentOwnerUid: data.ownerUid || null,
+        timestamp: serverTimestamp()
+      });
+      textEl.value = '';
+      replyArea.classList.add('hidden');
+      showToast('Reply posted!');
+    });
+
+    // delete button - visible only to owner or staff (visibility rechecked periodically)
+    const deleteBtn = wrapper.querySelector('.delete-post');
+    const canDelete = () => (currentUser && (currentUser.uid === data.ownerUid || isLibraryLoggedIn));
+    deleteBtn.style.display = canDelete() ? 'inline-block' : 'none';
+    const visInterval = setInterval(()=> { deleteBtn.style.display = canDelete() ? 'inline-block' : 'none'; }, 1000);
+
+    deleteBtn.addEventListener('click', async ()=>{
+      if (!confirm("Delete this post? This cannot be undone.")) return;
+      try {
+        // delete replies then delete post (client-side cascade)
+        await deleteAllRepliesForWriter(id);
+        await deleteDoc(doc(db, `artifacts/${appId}/public/data/writers`, id));
+        showToast('Post deleted');
+      } catch (err) {
+        console.error('Delete failed', err);
+        showToast('Failed to delete post', true);
+      } finally {
+        clearInterval(visInterval);
+      }
+    });
+
+    // replies listener
+    const repliesColRef = repliesCollectionRef(id);
+    const q = query(repliesColRef, orderBy('timestamp','asc'));
+    const unsub = onSnapshot(q, snap => {
+      const repliesListEl = wrapper.querySelector('.replies-list');
+      repliesListEl.innerHTML = '';
+      snap.forEach(rDoc => {
+        const r = rDoc.data();
+        const rDiv = document.createElement('div');
+        rDiv.className = 'rounded p-2 bg-white/10';
+        rDiv.innerHTML = `<p class="text-sm"><strong>${r.user}</strong> <span class="text-xs muted">• ${r.timestamp && r.timestamp.toDate ? r.timestamp.toDate().toLocaleString() : ''}</span></p>
+                          <p class="mt-1">${r.text}</p>`;
+        repliesListEl.appendChild(rDiv);
+      });
+    });
+
+    repliesUnsubMap.set(id, () => { try { unsub(); } catch(e){} });
+
+    return wrapper;
+  }
+
+  // render writers list and cleanup previous listeners
+  onSnapshot(query(writersCol, orderBy('timestamp','desc')), async snap=>{
+    repliesUnsubMap.forEach(fn => { try { fn(); } catch(e){ console.warn(e); } });
+    repliesUnsubMap.clear();
+
+    writersList.innerHTML = '';
+    for(const docSnap of snap.docs){
+      const postEl = await renderWriterPost(docSnap);
+      writersList.appendChild(postEl);
+    }
+  });
+
+});
+</script>
+</body>
+</html>
